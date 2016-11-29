@@ -40,7 +40,6 @@ public class SearchEngine {
     private final String MASKS_ALIAS = "masks";
     private static String MASKS = "";
     private static String encoding = "windows-1251";
-    private List<String> fileList = new ArrayList<>();
     private Map<String, List<FormattedMatch>> mapOfFiles = new HashMap<>();
 
     private void init() {
@@ -60,69 +59,54 @@ public class SearchEngine {
     }
 
     public static void main(String[] args) {
-
         SearchEngine we = new SearchEngine();
         we.init();
         File baseFile = new File(BASE_FOLDER);
         if (baseFile.isDirectory()) {
-            we.fillOperatedFileNames(baseFile);
-            we.fill("чебурек");
-//            we.showContent();
+            we.fillOperatedFileNames(baseFile, "вклад");
             we.writeXML();
         }       
     }
 
-
-    private void fillOperatedFileNames(File baseFile) {
-
+    private void fillOperatedFileNames(File baseFile, String regexp) {
         List<File> list = Arrays.asList(baseFile.listFiles());
         String[] extensions = MASKS.split(", ");        
-        list.stream().forEach((file) -> {
+        list.stream().forEach((File file) -> {
             if (file.isFile()) {
                 for (String extension: extensions) {
                     if (file.getName().contains(extension)) {
-                        fileList.add(file.getAbsolutePath());
+                        extractContentDocx(new ArrayList<>(), file.getAbsolutePath(), regexp);
                     }
                 }
             } else {
-                fillOperatedFileNames(file.getAbsoluteFile());
+                fillOperatedFileNames(file.getAbsoluteFile(), regexp);
             }
         });
     }
 
-    private void fill(String regexp) {
-        fileList.stream().forEach((fileName) -> {
-            String[] extensions = MASKS.split(", ");
-            for (String extension: extensions) {
-                if (fileName.contains(extension)) 
-                {
-                    extractContentDocx(fileName, regexp);
-                }
-            }
-        });
+    private void extractContentDocx(List<FormattedMatch> list, String fullFileName, String regexp) {
+        try {
+            search(list, regexp, fullFileName);
+        } catch (IOException | SAXException | TikaException e) {
+            LOG.error(e.getMessage());
+        }
     }
 
-    private void search(String fileName, String regexp, String text) throws UnsupportedEncodingException {
+    private void search(List<FormattedMatch> matches, String regexp, String fileName) throws UnsupportedEncodingException, IOException, SAXException, TikaException {        
+        String text = parseToPlainText(fileName);
         Pattern pattern = Pattern.compile(regexp);
-        Matcher matcher = pattern.matcher(text);
-        List<FormattedMatch> matches = new ArrayList<>();
+        Matcher matcher = pattern.matcher(text);        
         int index = 1;
         while (matcher.find()) {
             FormattedMatch fm = new FormattedMatch();
-            fm.setFileName(fileName);           
-            fm.setStart(
-                (matcher.start() < WIDTH_OF_SEARCH ? 0 : (matcher.start() - WIDTH_OF_SEARCH))
-            );
-            fm.setEnd(
-                (matcher.end() < WIDTH_OF_SEARCH) ? matcher.end() + WIDTH_OF_SEARCH : matcher.end()
-            );
+            fm.setStart((matcher.start() < WIDTH_OF_SEARCH ? 0 : (matcher.start() - WIDTH_OF_SEARCH)));
+            fm.setEnd((matcher.end() < WIDTH_OF_SEARCH) ? matcher.end() + WIDTH_OF_SEARCH : matcher.end());
             String dd = "";
             if (fm.getEnd() > text.length()) {
                 dd = text.substring(fm.getStart());
             } else {
                 dd = text.substring(fm.getStart(), fm.getEnd());
-            }
-            
+            }            
             fm.setTextMatch(dd);
             fm.setIndex(index);
             matches.add(fm);
@@ -138,7 +122,7 @@ public class SearchEngine {
             String key = (String) it.next();
             List<FormattedMatch> listOfMatches = (List<FormattedMatch>) mapOfFiles.get(key);
             listOfMatches.stream().forEach((fm) -> {
-                System.out.println(fm.toString());
+                System.out.println("\n" + key + ":" + fm.toString());
             });
         }
     }
@@ -170,14 +154,6 @@ public class SearchEngine {
 //            return tika.parseToString(stream);
 //        }
 //    }
-    private void extractContentDocx(String fullFileName, String regexp) {
-        try {
-            search(fullFileName, regexp, parseToPlainText(fullFileName));
-        } catch (IOException | SAXException | TikaException e) {
-            LOG.error(e.getMessage());
-        }
-    }
-    
     private void writeXML() {
         
         Set keySet = mapOfFiles.keySet();
@@ -188,19 +164,23 @@ public class SearchEngine {
             writer.writeStartDocument(encoding, "1.0");
             writer.writeStartElement("documents");                        
             while (it.hasNext()) {
-                String key = (String) it.next();
-                List<FormattedMatch> listOfMatches = (List<FormattedMatch>) mapOfFiles.get(key);  
+                String fileName = (String) it.next();
+                writer.writeStartElement("document");
+                writer.writeStartElement("filename");
+                writer.writeCData(fileName);   
+                writer.writeEndElement();//filename
+                List<FormattedMatch> listOfMatches = (List<FormattedMatch>) mapOfFiles.get(fileName);  
                 for (FormattedMatch fm : listOfMatches) {
                     writer.writeStartElement("item");
-                    writer.writeAttribute("title", fm.getFileName());   
                     writer.writeAttribute("index", String.valueOf(fm.getIndex()));                   
                     writer.writeAttribute("start_position", String.valueOf(fm.getStart()));                   
                     writer.writeAttribute("end_position", String.valueOf(fm.getEnd()));                   
                     writer.writeStartElement("description");
-                    writer.writeCData(fm.getTextMatch());
+                    writer.writeCData(fm.getTextMatch().trim());
                     writer.writeEndElement();//description
                     writer.writeEndElement();//item
-                }
+                }                
+                writer.writeEndElement();//document
             }
             writer.writeEndDocument();//documents
             writer.flush();
