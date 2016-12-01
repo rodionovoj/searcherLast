@@ -1,17 +1,16 @@
 package com.rojsn.searchengine;
 
-import java.util.regex.Matcher;
-
 /**
  *
  * @author sbt-rodionov-oy
  */
-class FormattedMatch {
+public class FormattedMatch {
 
     private int start;
     private int end;
     private int index;
     private String textMatch;
+    private String fileName;
 
     /**
      * @return the start
@@ -71,5 +70,19 @@ class FormattedMatch {
      */
     public void setIndex(int index) {
         this.index = index;
+    }
+
+    /**
+     * @return the fileName
+     */
+    public String getFileName() {
+        return fileName;
+    }
+
+    /**
+     * @param fileName the fileName to set
+     */
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
     }
 }

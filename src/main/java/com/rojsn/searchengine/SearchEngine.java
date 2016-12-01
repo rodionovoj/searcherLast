@@ -1,5 +1,6 @@
 package com.rojsn.searchengine;
 
+import com.rojsn.searchengine.gui.SearchEngineDemo;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -15,6 +16,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.swing.tree.DefaultMutableTreeNode;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
@@ -32,7 +34,7 @@ public class SearchEngine {
 
     private static final org.apache.log4j.Logger LOG = org.apache.log4j.Logger.getLogger(SearchEngine.class);
     private final String BASE_DOC_FOLDER = "base_folder";
-    private static String BASE_FOLDER;
+    public static String BASE_FOLDER;
     private int WIDTH_OF_SEARCH;
     private final String WIDTH = "width";
     private int MAX_SIZE_OF_TEXT;
@@ -42,6 +44,14 @@ public class SearchEngine {
     private static String encoding = "windows-1251";
     private Map<String, List<FormattedMatch>> mapOfFiles = new HashMap<>();
 
+    public SearchEngine() {
+        init();
+    }
+    
+    public Map<String, List<FormattedMatch>> getMapFiles() {
+        return mapOfFiles;
+    }
+    
     private void init() {
         try {
             InputStream cfg = new FileInputStream("tika-config.xml");
@@ -63,15 +73,15 @@ public class SearchEngine {
         we.init();
         File baseFile = new File(BASE_FOLDER);
         if (baseFile.isDirectory()) {
-            we.fillOperatedFileNames(baseFile, "вклад");
+            we.fillOperatedFileNames(baseFile, "чебурек");
             we.writeXML();
         }       
     }
 
-    private void fillOperatedFileNames(File baseFile, String regexp) {
+    public void fillOperatedFileNames(File baseFile, String regexp) {
         List<File> list = Arrays.asList(baseFile.listFiles());
         String[] extensions = MASKS.split(", ");        
-        list.stream().forEach((File file) -> {
+        for (File file: list) {
             if (file.isFile()) {
                 for (String extension: extensions) {
                     if (file.getName().contains(extension)) {
@@ -81,7 +91,7 @@ public class SearchEngine {
             } else {
                 fillOperatedFileNames(file.getAbsoluteFile(), regexp);
             }
-        });
+        }
     }
 
     private void extractContentDocx(List<FormattedMatch> list, String fullFileName, String regexp) {
@@ -92,7 +102,7 @@ public class SearchEngine {
         }
     }
 
-    private void search(List<FormattedMatch> matches, String regexp, String fileName) throws UnsupportedEncodingException, IOException, SAXException, TikaException {        
+    private void search(List<FormattedMatch> matchNodees, String regexp, String fileName) throws UnsupportedEncodingException, IOException, SAXException, TikaException {        
         String text = parseToPlainText(fileName);
         Pattern pattern = Pattern.compile(regexp);
         Matcher matcher = pattern.matcher(text);        
@@ -109,13 +119,34 @@ public class SearchEngine {
             }            
             fm.setTextMatch(dd);
             fm.setIndex(index);
-            matches.add(fm);
+            matchNodees.add(fm);
             index++;
-            mapOfFiles.put(fileName, matches);
+            mapOfFiles.put(fileName, matchNodees);
         }
     }
+    
+    public void  createNodes(DefaultMutableTreeNode top) {
+              
+        DefaultMutableTreeNode document = null;
+        DefaultMutableTreeNode matchNode = null;             
+        Set keySet = mapOfFiles.keySet();
+        Iterator it = keySet.iterator();
+        while (it.hasNext()) {
+            String fileName = (String) it.next();       
+            document = new DefaultMutableTreeNode(fileName);
+            top.add(document);
+            List<FormattedMatch> matches = mapOfFiles.get(fileName);
+            for (FormattedMatch match: matches) {   
+                match.setFileName(fileName);
+                matchNode = new DefaultMutableTreeNode(match);
+                document.add(matchNode);
+            }
+            
 
-    private void showContent() {
+        } 
+    }
+
+    public void showContent() {
         Set keySet = mapOfFiles.keySet();
         Iterator it = keySet.iterator();
         while (it.hasNext()) {
