@@ -2,7 +2,6 @@ package com.rojsn.searchengine.gui;
 
 import com.rojsn.searchengine.FormattedMatch;
 import com.rojsn.searchengine.SearchEngine;
-import com.rojsn.searchengine.XMLUtils;
 import javax.swing.JEditorPane;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -24,10 +23,6 @@ import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import javax.swing.BorderFactory;
 import javax.swing.GroupLayout;
 import static javax.swing.GroupLayout.Alignment.BASELINE;
@@ -39,14 +34,11 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
-import javax.swing.WindowConstants;
 import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.MutableTreeNode;
-import javax.swing.tree.TreeModel;
 
 public class SearchEngineDemo extends JPanel implements TreeSelectionListener {
 
-    private JPanel searchPane = new JPanel();
+    private final JPanel searchPane = new JPanel();
     private JEditorPane htmlPane;
     private JTree tree;
     private GroupLayout layout;
@@ -60,6 +52,7 @@ public class SearchEngineDemo extends JPanel implements TreeSelectionListener {
     private JButton btnCancel = new JButton("Отменить");
     private URL helpURL;
     private static boolean DEBUG = false;
+    private JSplitPane mainSplitPanel;
         
 
     //Optionally play with line styles.  Possible values are
@@ -74,9 +67,19 @@ public class SearchEngineDemo extends JPanel implements TreeSelectionListener {
 
     public SearchEngineDemo() {
 
-        JSplitPane mainSplitPanel = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
-        JPanel grid = new JPanel(new GridLayout(2, 1));       
-        grid.setAutoscrolls(true);
+        initComponents();
+        
+        new SearchData();
+     
+    }
+
+    private void initComponents() {
+               
+        mainSplitPanel = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+        Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
+        mainSplitPanel.setPreferredSize(dim);
+     //   JPanel grid = new JPanel(new GridLayout(1, 2));       
+       // grid.setAutoscrolls(true);
         
         cbCaseSensitive.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0)); 
         cbWholeWords.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0)); 
@@ -87,120 +90,78 @@ public class SearchEngineDemo extends JPanel implements TreeSelectionListener {
         tree = new JTree(top);        
         //Create the scroll pane and add the tree to it. 
         JScrollPane treeView = new JScrollPane(tree);
-        
-        SearchEngine se = new SearchEngine();
-        File baseFile = new File(SearchEngine.BASE_FOLDER);
-        if (!"".equals(regexp)) {
-            if (baseFile.isDirectory()) {
-                se.fillOperatedFileNames(baseFile, getRegexp());
-            }
-        }        
-        se.createNodes(top);
-
-        baseFolder.setText(SearchEngine.BASE_FOLDER);
+         baseFolder.setText(SearchEngine.BASE_FOLDER);
         JButton button = new JButton("Корневой каталог");
         button.setAlignmentX(CENTER_ALIGNMENT); 
-        button.addActionListener((ActionEvent e) -> {
-            JFileChooser fileopen = new JFileChooser();
-            fileopen.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-            int ret = fileopen.showDialog(null, "Выбрать каталог");
-            if (ret == JFileChooser.APPROVE_OPTION) {
-                File file = fileopen.getSelectedFile();
-                baseFolder.setText(file.getAbsolutePath());
-//                XMLUtils.
-            }
-        });
-        textField.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                setRegexp(textField.getText());
-            }
-        });
-        btnFind.addActionListener((ActionEvent e) -> {
-            if (textField.getText().equals("")){
-                JOptionPane.showMessageDialog(null, "Error: Строка поиска не должна быть пустой!", "Error Massage",
-                        JOptionPane.ERROR_MESSAGE);
-            } else {     
-                tree.removeAll();
-                se.fillOperatedFileNames(baseFile, textField.getText());                
-                se.createNodes(top); 
-                DefaultTreeModel model = (DefaultTreeModel)tree.getModel();                
-                model.reload();
-            }
-        });
+        button.addActionListener(new FolderChooser());
+        btnFind.addActionListener(new SearchData());            
+
+           //Add the scroll panes to a split pane.
+        JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+        splitPane.setTopComponent(searchPane);
+        splitPane.setBottomComponent(treeView);
         
-        cbCaseSensitive.addActionListener((ActionEvent e) -> {            
-            JOptionPane.showMessageDialog(null, "Еще не реализовано!", "Error Massage",  JOptionPane.ERROR_MESSAGE);            
-        });
-        cbWholeWords.addActionListener((ActionEvent e) -> {            
-            JOptionPane.showMessageDialog(null, "Еще не реализовано!", "Error Massage",  JOptionPane.ERROR_MESSAGE);            
-        });
-        cbBackward.addActionListener((ActionEvent e) -> {            
-            JOptionPane.showMessageDialog(null, "Еще не реализовано!", "Error Massage",  JOptionPane.ERROR_MESSAGE);            
-        });
+        cbCaseSensitive.addActionListener(new NotImplementedYet());
+        cbWholeWords.addActionListener(new NotImplementedYet());
+        cbBackward.addActionListener(new NotImplementedYet());
 
         GroupLayout layout = new GroupLayout(searchPane);   
         searchPane.setLayout(layout);
-        searchPane.setSize(1200, 800);
         layout.setAutoCreateGaps(true); 
         layout.setAutoCreateContainerGaps(true); 
-        
+                
         // Создание горизонтальной группы
-        layout.setHorizontalGroup(layout.createSequentialGroup() 
-                
-                .addGroup(
-                    layout.createParallelGroup(LEADING) 
-                        .addComponent(label)  
-                        .addGroup(layout.createParallelGroup(LEADING).addComponent(button)
-                        .addGroup(layout.createParallelGroup(LEADING).addComponent(baseFolder)
-                        ))
-                )  
-                .addGroup(layout.createParallelGroup(LEADING) 
-                        .addComponent(textField) 
-                        .addGroup(layout.createSequentialGroup() 
-                        .addGroup(layout.createParallelGroup(LEADING) 
-                                .addComponent(cbCaseSensitive) 
-                                .addComponent(cbBackward)) 
-                        .addGroup(layout.createParallelGroup(LEADING) 
-                                .addComponent(cbWholeWords)))) 
-                
-                .addGroup(layout.createParallelGroup(LEADING) 
-                .addComponent(btnFind) 
-                .addComponent(btnCancel)) 
-                              
-                
+        layout.setHorizontalGroup(layout.createSequentialGroup()                
+            .addGroup(
+                layout.createParallelGroup(LEADING) 
+                    .addComponent(label)  
+                    .addGroup(layout.createParallelGroup(LEADING).addComponent(button)
+                    .addGroup(layout.createParallelGroup(LEADING).addComponent(baseFolder)
+                    ))
+            )  
+            .addGroup(layout.createParallelGroup(LEADING) 
+                    .addComponent(textField) 
+                    .addGroup(layout.createSequentialGroup() 
+                    .addGroup(layout.createParallelGroup(LEADING) 
+                            .addComponent(cbCaseSensitive) 
+                            .addComponent(cbBackward)) 
+                    .addGroup(layout.createParallelGroup(LEADING) 
+                            .addComponent(cbWholeWords)))) 
+
+            .addGroup(layout.createParallelGroup(LEADING) 
+            .addComponent(btnFind) 
+            .addComponent(btnCancel))                              
         ); 
          
         layout.linkSize(SwingConstants.HORIZONTAL, btnFind, btnCancel); 
          
         // Создание вертикальной группы
         layout.setVerticalGroup(layout.createSequentialGroup() 
-                .addGroup(
-                    layout.createParallelGroup(BASELINE) 
-                        .addComponent(label) 
-                        .addComponent(textField) 
-                        .addComponent(btnFind)
-                    ) 
-                .addGroup(
-                    layout.createParallelGroup(LEADING) 
-                        .addGroup(layout.createSequentialGroup() 
-                        .addGroup(layout.createParallelGroup(BASELINE) 
-                                .addComponent(cbCaseSensitive)
-                                .addComponent(cbWholeWords))                                
-                        .addGroup(layout.createParallelGroup(BASELINE) 
-                                .addComponent(cbBackward))
-                    ) 
-                .addComponent(btnCancel)
-                )                
-                .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(LEADING).addComponent(button))
-                        .addGroup(layout.createParallelGroup(LEADING).addComponent(baseFolder))
-                )
+            .addGroup(
+                layout.createParallelGroup(BASELINE) 
+                    .addComponent(label) 
+                    .addComponent(textField) 
+                    .addComponent(btnFind)
+                ) 
+            .addGroup(
+                layout.createParallelGroup(LEADING) 
+                    .addGroup(layout.createSequentialGroup() 
+                    .addGroup(layout.createParallelGroup(BASELINE) 
+                            .addComponent(cbCaseSensitive)
+                            .addComponent(cbWholeWords))                                
+                    .addGroup(layout.createParallelGroup(BASELINE) 
+                            .addComponent(cbBackward))
+                ) 
+            .addComponent(btnCancel)
+            )                
+            .addGroup(layout.createSequentialGroup()
+                    .addGroup(layout.createParallelGroup(BASELINE).addComponent(button))
+                    .addGroup(layout.createParallelGroup(BASELINE).addComponent(baseFolder))
+            )
         ); 
          
         //Create a tree that allows one selection at a time.        
         tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
-
         //Listen for when the selection changes.
         tree.addTreeSelectionListener(this);
         tree.setRootVisible(true);
@@ -210,61 +171,60 @@ public class SearchEngineDemo extends JPanel implements TreeSelectionListener {
             tree.putClientProperty("JTree.lineStyle", lineStyle);
         }
 
-        
-//        layout = new GroupLayout();
-  //      getContentPane().setLayout(layout);
-
-        //Create the scroll pane and add the tree to it. 
-//        JScrollPane treeView = new JScrollPane(tree);
-
         //Create the HTML viewing pane.
         htmlPane = new JEditorPane();
         htmlPane.setEditable(false);
 //        initHelp();//todo roj
         JScrollPane htmlView = new JScrollPane(htmlPane);
-
-        //Add the scroll panes to a split pane.
-        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
-        splitPane.setLeftComponent(treeView);
-        splitPane.setRightComponent(htmlView);
-
-//        Dimension minimumSize = new Dimension(100, 50);
-//        htmlView.setMinimumSize(minimumSize);
-//        treeView.setMinimumSize(minimumSize);
-        splitPane.setDividerLocation(300);
-        
-        //Add the split pane to this panel.
-        mainSplitPanel.setTopComponent(searchPane);
-        mainSplitPanel.setBottomComponent(splitPane);
-        mainSplitPanel.setAutoscrolls(true);
+        mainSplitPanel.setLeftComponent(splitPane);
+        mainSplitPanel.setRightComponent(htmlView);
         add(mainSplitPanel);
     }
+    
+    private class FolderChooser implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {         
+            JFileChooser fileopen = new JFileChooser();
+            fileopen.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            int ret = fileopen.showDialog(null, "Выбрать каталог");
+            if (ret == JFileChooser.APPROVE_OPTION) {
+                File file = fileopen.getSelectedFile();
+                baseFolder.setText(file.getAbsolutePath());
+           //     XMLUtils.storeXmlPropertiesToFile(sourceProperties, pathAndFileName);
+            }
+        }
+}
 
-//    /**
-//     * Required by TreeSelectionListener interface.
-//     */
-//    public void valueChanged1(TreeSelectionEvent e) {
-//        DefaultMutableTreeNode node = (DefaultMutableTreeNode) tree.getLastSelectedPathComponent();
-//
-//        if (node == null) {
-//            return;
-//        }
-//
-//        Object nodeInfo = node.getUserObject();
-//        if (node.isLeaf()) {
-//            BookInfo match = (BookInfo) nodeInfo;
-//            displayURL(match.matchURL);
-//            if (DEBUG) {
-//                System.out.print(match.matchURL + ":  \n    ");
-//            }
-//        } else {
-//            displayURL(helpURL);
-//        }
-//        if (DEBUG) {
-//            System.out.println(nodeInfo.toString());
-//        }
-//    }
-
+    private class SearchData implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {            
+            SearchEngine se = new SearchEngine();
+            DefaultMutableTreeNode top = new DefaultMutableTreeNode(SearchEngine.BASE_FOLDER);
+            File baseFile = new File(SearchEngine.BASE_FOLDER);
+                if (textField.getText().equals("")){
+                    JOptionPane.showMessageDialog(null, "Error: Строка поиска не должна быть пустой!", "Error Massage",
+                            JOptionPane.ERROR_MESSAGE);
+                } else {
+                    if (baseFile.isDirectory()) {
+                        se.fillOperatedFileNames(baseFile, textField.getText());
+                    }
+                    se.createNodes(top); 
+                    DefaultTreeModel model = (DefaultTreeModel)tree.getModel();                
+                    model.reload();
+                    tree.setModel(model);
+                }      
+//            se.createNodes(top);
+        }    
+    }
+    
+    private class NotImplementedYet implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {            
+            JOptionPane.showMessageDialog(null, "Еще не реализовано!", "Error Massage",  JOptionPane.ERROR_MESSAGE);            
+        }
+    
+    }
+    
     public void valueChanged(TreeSelectionEvent e) {
         DefaultMutableTreeNode node = (DefaultMutableTreeNode) tree.getLastSelectedPathComponent();
         if (node == null) {
@@ -276,26 +236,7 @@ public class SearchEngineDemo extends JPanel implements TreeSelectionListener {
             displayMatch(match);
         }
     }
-
-    private class BookInfo {
-
-        public String matchName;
-        public URL matchURL;
-
-        public BookInfo(String match, String filename) {
-            matchName = match;
-            matchURL = getClass().getResource(filename);
-            if (matchURL == null) {
-                System.err.println("Couldn't find file: "
-                        + filename);
-            }
-        }
-
-        public String toString() {
-            return matchName;
-        }
-    }
-
+   
     private void initHelp() {
         String s = "TreeDemoHelp.html";
         helpURL = getClass().getResource(s);
@@ -322,6 +263,7 @@ public class SearchEngineDemo extends JPanel implements TreeSelectionListener {
             System.err.println("Attempted to read a bad URL: " + url);
         }
     }
+ 
     private void displayMatch(FormattedMatch match) {
         if (match != null) {
             htmlPane.setText(match.getTextMatch());
@@ -346,8 +288,11 @@ public class SearchEngineDemo extends JPanel implements TreeSelectionListener {
 
         //Create and set up the window.
         JFrame frame = new JFrame("TreeDemo");
-        Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
-        frame.setSize(dim);
+//        Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
+//        frame.setSize(new Dimension(1860, 1000));
+//        frame.setSize(dim);
+
+        setCenterPosition(frame);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         //Add content to the window.
         frame.add(new SearchEngineDemo());
@@ -357,6 +302,24 @@ public class SearchEngineDemo extends JPanel implements TreeSelectionListener {
         frame.setVisible(true);
     }
 
+    private static void setCenterPosition(JFrame frame) {
+        
+          Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+          Dimension frameSize = frame.getPreferredSize();
+
+          if (frameSize.height > screenSize.height) {
+               frameSize.height = screenSize.height;
+          }
+
+          if (frameSize.width > screenSize.width) {
+               frameSize.width = screenSize.width;
+          }
+          int newWidth = (int) (screenSize.getWidth() - frameSize.getWidth())/2;
+          int newHeight = (int) (screenSize.getHeight()- frameSize.getHeight())/2;
+
+          frame.setLocation(newWidth, newHeight);
+     }
+    
     public static void main(String[] args) {
         //Schedule a job for the event dispatch thread:
         //creating and showing this application's GUI.
@@ -365,19 +328,5 @@ public class SearchEngineDemo extends JPanel implements TreeSelectionListener {
                 createAndShowGUI();
             }
         });
-    }
-
-    /**
-     * @return the regexp
-     */
-    public String getRegexp() {
-        return regexp;
-    }
-
-    /**
-     * @param regexp the regexp to set
-     */
-    public void setRegexp(String regexp) {
-        this.regexp = regexp;
     }
 }
