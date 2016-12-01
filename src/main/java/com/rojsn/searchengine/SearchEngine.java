@@ -61,7 +61,7 @@ public class SearchEngine {
             MASKS = (String) pref.getProperty(MASKS_ALIAS);
             WIDTH_OF_SEARCH = Integer.parseInt((String) pref.getProperty(WIDTH, "200"));
             MAX_SIZE_OF_TEXT = Integer.parseInt((String) pref.getProperty(MAX_SIZE, "10000000"));
-            encoding = System.lineSeparator().equals("\r\n") ? "windows-1251" : "UTF-8";            
+            encoding = System.lineSeparator().equals("\r\n") ? "windows-1251" : "UTF-8";               
 
         } catch (IOException | NumberFormatException e) {
             LOG.error("count=" + e.getMessage());
@@ -105,7 +105,7 @@ public class SearchEngine {
     private void search(List<FormattedMatch> matchNodees, String regexp, String fileName) throws UnsupportedEncodingException, IOException, SAXException, TikaException {        
         String text = parseToPlainText(fileName);
         Pattern pattern = Pattern.compile(regexp);
-        Matcher matcher = pattern.matcher(text);        
+        Matcher matcher = pattern.matcher(text);           
         int index = 1;
         while (matcher.find()) {
             FormattedMatch fm = new FormattedMatch();
@@ -140,10 +140,8 @@ public class SearchEngine {
                 match.setFileName(fileName);
                 matchNode = new DefaultMutableTreeNode(match);
                 document.add(matchNode);
-            }
-            
-
-        } 
+            }           
+        }         
     }
 
     public void showContent() {
