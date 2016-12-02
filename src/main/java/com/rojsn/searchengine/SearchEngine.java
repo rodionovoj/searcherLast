@@ -102,7 +102,7 @@ public class SearchEngine {
         }
     }
 
-    private void search(List<FormattedMatch> matchNodees, String regexp, String fileName) throws UnsupportedEncodingException, IOException, SAXException, TikaException {        
+    private void search(List<FormattedMatch> matches, String regexp, String fileName) throws UnsupportedEncodingException, IOException, SAXException, TikaException {        
         String text = parseToPlainText(fileName);
         Pattern pattern = Pattern.compile(regexp);
         Matcher matcher = pattern.matcher(text);           
@@ -119,9 +119,9 @@ public class SearchEngine {
             }            
             fm.setTextMatch(dd);
             fm.setIndex(index);
-            matchNodees.add(fm);
+            matches.add(fm);
             index++;
-            mapOfFiles.put(fileName, matchNodees);
+            mapOfFiles.put(fileName, matches);
         }
     }
     

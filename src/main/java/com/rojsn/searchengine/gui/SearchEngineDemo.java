@@ -18,7 +18,6 @@ import javax.swing.event.TreeSelectionListener;
 import java.net.URL;
 import java.io.IOException;
 import java.awt.Dimension;
-import java.awt.GridLayout;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -34,7 +33,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
-import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreePath;
 
 public class SearchEngineDemo extends JPanel implements TreeSelectionListener {
 
@@ -42,35 +41,32 @@ public class SearchEngineDemo extends JPanel implements TreeSelectionListener {
     private JEditorPane htmlPane;
     private JTree tree;
     private GroupLayout layout;
-    private JLabel label = new JLabel("Поиск строки:");
-    private JLabel baseFolder = new JLabel("Поиск из папки:");
-    private JTextField textField = new JTextField();
-    private JCheckBox cbCaseSensitive = new JCheckBox("Учет регистра");
-    private JCheckBox cbWholeWords = new JCheckBox("Целое слово");
-    private JCheckBox cbBackward = new JCheckBox("Поиск назад");
-    private JButton btnFind = new JButton("Найти");
-    private JButton btnCancel = new JButton("Отменить");
+    private final JLabel label = new JLabel("Поиск строки:");
+    private final JLabel baseFolder = new JLabel("Поиск из папки:");
+    private final JTextField textField = new JTextField();
+    private final JCheckBox cbCaseSensitive = new JCheckBox("Учет регистра");
+    private final JCheckBox cbWholeWords = new JCheckBox("Целое слово");
+    private final JCheckBox cbBackward = new JCheckBox("Поиск назад");
+    private final JButton btnFind = new JButton("Найти");
+    private final JButton btnCancel = new JButton("Отменить");
     private URL helpURL;
-    private static boolean DEBUG = false;
+    private static final boolean DEBUG = false;
     private JSplitPane mainSplitPanel;
+    private JScrollPane treeView;
         
-
     //Optionally play with line styles.  Possible values are
     //"Angled" (the default), "Horizontal", and "None".
-    private static boolean playWithLineStyle = false;
-    private static String lineStyle = "Horizontal";
+    private static final boolean playWithLineStyle = false;
+    private static final String lineStyle = "Horizontal";
 
     //Optionally set the look and feel.
-    private static boolean useSystemLookAndFeel = false;
+    private static final boolean useSystemLookAndFeel = false;
     
     private String regexp = "";
 
     public SearchEngineDemo() {
-
-        initComponents();
-        
-        new SearchData();
-     
+        initComponents();        
+        new SearchData();     
     }
 
     private void initComponents() {
@@ -78,19 +74,36 @@ public class SearchEngineDemo extends JPanel implements TreeSelectionListener {
         mainSplitPanel = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
         Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
         mainSplitPanel.setPreferredSize(dim);
-     //   JPanel grid = new JPanel(new GridLayout(1, 2));       
-       // grid.setAutoscrolls(true);
         
         cbCaseSensitive.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0)); 
-        cbWholeWords.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0)); 
+        cbCaseSensitive.addActionListener(new NotImplementedYet());
         cbBackward.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0)); 
+        cbBackward.addActionListener(new NotImplementedYet());
+        cbWholeWords.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));        
+        cbWholeWords.addActionListener(new NotImplementedYet());        
 
         //Create the nodes.
         DefaultMutableTreeNode top = new DefaultMutableTreeNode(SearchEngine.BASE_FOLDER);
-        tree = new JTree(top);        
+        tree = new JTree(top); 
+                //Create a tree that allows one selection at a time.        
+        tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+        //Listen for when the selection changes.
+        tree.addTreeSelectionListener(this);
+//        tree.addTreeSelectionListener(createSelectionListener());
+        tree.setRootVisible(true);
+//        tree.addNotify();
+        
+        SearchEngine se = new SearchEngine();        
         //Create the scroll pane and add the tree to it. 
-        JScrollPane treeView = new JScrollPane(tree);
-         baseFolder.setText(SearchEngine.BASE_FOLDER);
+        treeView = new JScrollPane(
+            tree, 
+            JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+            JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS
+        );        
+        treeView.setWheelScrollingEnabled(true);
+        treeView.setViewportView(tree);
+        
+        baseFolder.setText(SearchEngine.BASE_FOLDER);
         JButton button = new JButton("Корневой каталог");
         button.setAlignmentX(CENTER_ALIGNMENT); 
         button.addActionListener(new FolderChooser());
@@ -99,11 +112,7 @@ public class SearchEngineDemo extends JPanel implements TreeSelectionListener {
            //Add the scroll panes to a split pane.
         JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
         splitPane.setTopComponent(searchPane);
-        splitPane.setBottomComponent(treeView);
-        
-        cbCaseSensitive.addActionListener(new NotImplementedYet());
-        cbWholeWords.addActionListener(new NotImplementedYet());
-        cbBackward.addActionListener(new NotImplementedYet());
+        splitPane.setBottomComponent(treeView);        
 
         GroupLayout layout = new GroupLayout(searchPane);   
         searchPane.setLayout(layout);
@@ -115,12 +124,12 @@ public class SearchEngineDemo extends JPanel implements TreeSelectionListener {
             .addGroup(
                 layout.createParallelGroup(LEADING) 
                     .addComponent(label)  
-                    .addGroup(layout.createParallelGroup(LEADING).addComponent(button)
-                    .addGroup(layout.createParallelGroup(LEADING).addComponent(baseFolder)
-                    ))
+                    .addGroup(layout.createParallelGroup(LEADING).addComponent(button)                    
+                )
             )  
-            .addGroup(layout.createParallelGroup(LEADING) 
-                    .addComponent(textField) 
+            .addGroup(layout.createParallelGroup(LEADING)                     
+                    .addComponent(baseFolder) 
+                    .addGroup(layout.createParallelGroup(LEADING).addComponent(textField))
                     .addGroup(layout.createSequentialGroup() 
                     .addGroup(layout.createParallelGroup(LEADING) 
                             .addComponent(cbCaseSensitive) 
@@ -137,6 +146,10 @@ public class SearchEngineDemo extends JPanel implements TreeSelectionListener {
          
         // Создание вертикальной группы
         layout.setVerticalGroup(layout.createSequentialGroup() 
+                 .addGroup(layout.createSequentialGroup()
+                    .addGroup(layout.createParallelGroup(BASELINE).addComponent(button).addComponent(baseFolder))
+//                    .addGroup(layout.createParallelGroup(BASELINE).addComponent(baseFolder))
+            )
             .addGroup(
                 layout.createParallelGroup(BASELINE) 
                     .addComponent(label) 
@@ -145,27 +158,23 @@ public class SearchEngineDemo extends JPanel implements TreeSelectionListener {
                 ) 
             .addGroup(
                 layout.createParallelGroup(LEADING) 
-                    .addGroup(layout.createSequentialGroup() 
-                    .addGroup(layout.createParallelGroup(BASELINE) 
-                            .addComponent(cbCaseSensitive)
-                            .addComponent(cbWholeWords))                                
-                    .addGroup(layout.createParallelGroup(BASELINE) 
-                            .addComponent(cbBackward))
+                    .addGroup(
+                        layout.createSequentialGroup() 
+                            .addGroup(
+                                layout.createParallelGroup(BASELINE) 
+                                    .addComponent(cbCaseSensitive)
+                                    .addComponent(cbWholeWords)
+                            )                                
+                            .addGroup(
+                                layout.createParallelGroup(BASELINE) 
+                                    .addComponent(cbBackward)
+                            )
                 ) 
             .addComponent(btnCancel)
             )                
-            .addGroup(layout.createSequentialGroup()
-                    .addGroup(layout.createParallelGroup(BASELINE).addComponent(button))
-                    .addGroup(layout.createParallelGroup(BASELINE).addComponent(baseFolder))
-            )
+           
         ); 
          
-        //Create a tree that allows one selection at a time.        
-        tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
-        //Listen for when the selection changes.
-        tree.addTreeSelectionListener(this);
-        tree.setRootVisible(true);
-
         if (playWithLineStyle) {
             System.out.println("line style = " + lineStyle);
             tree.putClientProperty("JTree.lineStyle", lineStyle);
@@ -180,7 +189,24 @@ public class SearchEngineDemo extends JPanel implements TreeSelectionListener {
         mainSplitPanel.setRightComponent(htmlView);
         add(mainSplitPanel);
     }
-    
+   
+    private TreeSelectionListener createSelectionListener() {
+        return new TreeSelectionListener() {
+            public void valueChanged(TreeSelectionEvent e) {
+                TreePath path = e.getPath();                
+                int pathCount = path.getPathCount();
+
+                for (int i = 0; i < pathCount; i++) {
+                    System.out.print(path.getPathComponent(i).toString());
+                    if (i + 1 != pathCount) {
+                        System.out.print("|");
+                    }
+                }
+                System.out.println("");
+            }
+        };
+    }
+
     private class FolderChooser implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {         
@@ -199,8 +225,8 @@ public class SearchEngineDemo extends JPanel implements TreeSelectionListener {
         @Override
         public void actionPerformed(ActionEvent e) {            
             SearchEngine se = new SearchEngine();
-            DefaultMutableTreeNode top = new DefaultMutableTreeNode(SearchEngine.BASE_FOLDER);
-            File baseFile = new File(SearchEngine.BASE_FOLDER);
+            DefaultMutableTreeNode top = new DefaultMutableTreeNode(baseFolder.getText());
+            File baseFile = new File(baseFolder.getText());
                 if (textField.getText().equals("")){
                     JOptionPane.showMessageDialog(null, "Error: Строка поиска не должна быть пустой!", "Error Massage",
                             JOptionPane.ERROR_MESSAGE);
@@ -208,12 +234,21 @@ public class SearchEngineDemo extends JPanel implements TreeSelectionListener {
                     if (baseFile.isDirectory()) {
                         se.fillOperatedFileNames(baseFile, textField.getText());
                     }
-                    se.createNodes(top); 
-                    DefaultTreeModel model = (DefaultTreeModel)tree.getModel();                
-                    model.reload();
-                    tree.setModel(model);
+                    System.out.println("top.getDepth() = " + top.getDepth());
+                    se.createNodes(top);  
+                    System.out.println("top.getDepth() = " + top.getDepth());
+                    
+                    tree = new JTree(top); 
+                    treeView.getViewport().add(tree);
+//                    System.out.println("top.getDepth() = " + top.getDepth());
+//                    DefaultTreeModel model = (DefaultTreeModel)tree.getModel();                
+//                    model.reload();
+//                    tree.setModel(model);
+//                    tree.repaint();
+//                    tree.invalidate();
+//                    tree.updateUI();
+//                    System.out.println("top.getDepth() = " + top.getDepth());
                 }      
-//            se.createNodes(top);
         }    
     }
     
