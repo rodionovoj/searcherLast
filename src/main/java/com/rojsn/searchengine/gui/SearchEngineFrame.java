@@ -1,204 +1,346 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package com.rojsn.searchengine.gui;
 
-/**
- *
- * @author sbt-rodionov-oy
- */
-public class SearchEngineFrame extends javax.swing.JFrame {
+import com.rojsn.searchengine.FormattedMatch;
+import com.rojsn.searchengine.SearchEngine;
+import com.rojsn.searchengine.XMLUtils;
+import javax.swing.JEditorPane;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
+import javax.swing.UIManager;
 
-    /**
-     * Creates new form SearchEngineFrame
-     */
+import javax.swing.JTree;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.TreeSelectionModel;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
+
+import java.net.URL;
+import java.io.IOException;
+import java.awt.Dimension;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File;
+import javax.swing.BorderFactory;
+import javax.swing.GroupLayout;
+import static javax.swing.GroupLayout.Alignment.BASELINE;
+import static javax.swing.GroupLayout.Alignment.LEADING;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JFileChooser;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
+
+public class SearchEngineFrame extends JPanel implements TreeSelectionListener {
+
+    private final JPanel searchPane = new JPanel();
+    private JEditorPane htmlPane;
+    private JTree tree;
+    private GroupLayout layout;
+    private final JLabel label = new JLabel("Поиск строки:");
+    private final JLabel baseFolder = new JLabel("Поиск из папки:");
+    private final JTextField textField = new JTextField();
+    private final JCheckBox cbCaseSensitive = new JCheckBox("Учет регистра");
+    private final JCheckBox cbWholeWords = new JCheckBox("Целое слово");
+    private final JCheckBox cbBackward = new JCheckBox("Поиск назад");
+    private final JButton btnFind = new JButton("Найти");
+    private final JButton btnCancel = new JButton("Отменить");
+    private URL helpURL;
+    private static final boolean DEBUG = false;
+    private JSplitPane mainSplitPanel;
+    private JScrollPane treeView;
+        
+    //Optionally play with line styles.  Possible values are
+    //"Angled" (the default), "Horizontal", and "None".
+    private static final boolean playWithLineStyle = false;
+    private static final String lineStyle = "Horizontal";
+
+    //Optionally set the look and feel.
+    private static final boolean useSystemLookAndFeel = false;
+    
     public SearchEngineFrame() {
-        initComponents();
+        initComponents();        
+        new SearchData();     
+    }
+    
+    private void initComponents() {
+               
+        mainSplitPanel = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+        Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();        
+        mainSplitPanel.setPreferredSize(dim);        
+        cbCaseSensitive.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0)); 
+        cbCaseSensitive.addActionListener(new NotImplementedYet());
+        cbBackward.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0)); 
+        cbBackward.addActionListener(new NotImplementedYet());
+        cbWholeWords.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));        
+        cbWholeWords.addActionListener(new NotImplementedYet());        
+
+        //Create the nodes.
+        DefaultMutableTreeNode top = new DefaultMutableTreeNode(SearchEngine.BASE_FOLDER);
+        tree = new JTree(top); 
+        tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+        //Listen for when the selection changes.
+        tree.addTreeSelectionListener(this);
+        tree.setRootVisible(true);
+        
+        SearchEngine se = new SearchEngine();        
+        //Create the scroll pane and add the tree to it. 
+        treeView = new JScrollPane(tree);        
+        treeView.setWheelScrollingEnabled(true);
+        treeView.setViewportView(tree);
+        
+        baseFolder.setText(SearchEngine.BASE_FOLDER);
+        JButton button = new JButton("Корневой каталог");
+        button.setAlignmentX(CENTER_ALIGNMENT); 
+        button.addActionListener(new FolderChooser());
+        btnFind.addActionListener(new SearchData());            
+
+           //Add the scroll panes to a split pane.
+        JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+        splitPane.setTopComponent(searchPane);
+        splitPane.setBottomComponent(treeView);        
+
+        GroupLayout layout = new GroupLayout(searchPane);   
+        searchPane.setLayout(layout);
+        layout.setAutoCreateGaps(true); 
+        layout.setAutoCreateContainerGaps(true); 
+                
+        // Создание горизонтальной группы
+        layout.setHorizontalGroup(layout.createSequentialGroup()                
+            .addGroup(
+                layout.createParallelGroup(LEADING) 
+                    .addComponent(label)  
+                    .addGroup(layout.createParallelGroup(LEADING).addComponent(button)                    
+                )
+            )  
+            .addGroup(layout.createParallelGroup(LEADING)                     
+                    .addComponent(baseFolder) 
+                    .addGroup(layout.createParallelGroup(LEADING).addComponent(textField))
+                    .addGroup(layout.createSequentialGroup() 
+                    .addGroup(layout.createParallelGroup(LEADING) 
+                            .addComponent(cbCaseSensitive) 
+                            .addComponent(cbBackward)) 
+                    .addGroup(layout.createParallelGroup(LEADING) 
+                            .addComponent(cbWholeWords)))) 
+
+            .addGroup(layout.createParallelGroup(LEADING) 
+            .addComponent(btnFind) 
+            .addComponent(btnCancel))                              
+        ); 
+         
+        layout.linkSize(SwingConstants.HORIZONTAL, btnFind, btnCancel); 
+         
+        // Создание вертикальной группы
+        layout.setVerticalGroup(layout.createSequentialGroup() 
+                 .addGroup(layout.createSequentialGroup()
+                    .addGroup(layout.createParallelGroup(BASELINE).addComponent(button).addComponent(baseFolder))
+            )
+            .addGroup(
+                layout.createParallelGroup(BASELINE) 
+                    .addComponent(label) 
+                    .addComponent(textField) 
+                    .addComponent(btnFind)
+                ) 
+            .addGroup(
+                layout.createParallelGroup(LEADING) 
+                    .addGroup(
+                        layout.createSequentialGroup() 
+                            .addGroup(
+                                layout.createParallelGroup(BASELINE) 
+                                    .addComponent(cbCaseSensitive)
+                                    .addComponent(cbWholeWords)
+                            )                                
+                            .addGroup(
+                                layout.createParallelGroup(BASELINE) 
+                                    .addComponent(cbBackward)
+                            )
+                ) 
+            .addComponent(btnCancel)
+            )                
+           
+        ); 
+         
+        if (playWithLineStyle) {
+            System.out.println("line style = " + lineStyle);
+            tree.putClientProperty("JTree.lineStyle", lineStyle);
+        }
+
+        //Create the HTML viewing pane.
+        htmlPane = new JEditorPane();
+        htmlPane.setEditable(false);
+//        initHelp();//todo roj
+        JScrollPane htmlView = new JScrollPane(htmlPane);
+        mainSplitPanel.setLeftComponent(splitPane);
+        mainSplitPanel.setRightComponent(htmlView);
+        add(mainSplitPanel);
+    }
+   
+    private TreeSelectionListener createSelectionListener() {
+        return new TreeSelectionListener() {
+            @Override
+            public void valueChanged(TreeSelectionEvent e) {
+                DefaultMutableTreeNode node = (DefaultMutableTreeNode) tree.getLastSelectedPathComponent();
+                if (node == null) {
+                    return;
+                }
+                Object nodeInfo = node.getUserObject();
+                if (node.isLeaf()) {
+                    FormattedMatch match = (FormattedMatch) nodeInfo;
+                    displayMatch(match);
+                }
+            }
+        };
+    }
+
+    private class FolderChooser implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {         
+            JFileChooser fileopen = new JFileChooser(SearchEngine.BASE_FOLDER);
+            fileopen.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            int ret = fileopen.showDialog(null, "Выбрать каталог");
+            if (ret == JFileChooser.APPROVE_OPTION) {
+                File file = fileopen.getSelectedFile();
+                baseFolder.setText(file.getAbsolutePath());
+                XMLUtils.saveProperty(SearchEngine.BASE_DOC_FOLDER, file.getAbsolutePath());
+            }
+        }
+}
+
+    private class SearchData implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {            
+            SearchEngine se = new SearchEngine();
+            DefaultMutableTreeNode top = new DefaultMutableTreeNode(baseFolder.getText());
+            File baseFile = new File(baseFolder.getText());
+                if (textField.getText().equals("")){
+                    JOptionPane.showMessageDialog(null, "Error: Строка поиска не должна быть пустой!", "Error Massage",
+                            JOptionPane.ERROR_MESSAGE);
+                } else {
+                    if (baseFile.isDirectory()) {
+                        se.fillOperatedFileNames(baseFile, textField.getText());
+                    }
+                    se.createNodes(top);  
+                    tree = new JTree(top); 
+                    tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+                    //Listen for when the selection changes.
+                    tree.addTreeSelectionListener(createSelectionListener());
+                    tree.setRootVisible(true);
+                    treeView.getViewport().add(tree);
+                }      
+        }    
+    }
+    
+    private class NotImplementedYet implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e) {            
+            JOptionPane.showMessageDialog(null, "Еще не реализовано!", "Error Massage",  JOptionPane.ERROR_MESSAGE);            
+        }
+    
+    }
+    
+    @Override
+    public void valueChanged(TreeSelectionEvent e) {
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) tree.getLastSelectedPathComponent();
+        if (node == null) {
+            return;
+        }
+        Object nodeInfo = node.getUserObject();
+        if (node.isLeaf()) {
+            FormattedMatch match = (FormattedMatch) nodeInfo;
+            displayMatch(match);
+        }
+    }
+   
+    private void initHelp() {
+        String s = "TreeDemoHelp.html";
+        helpURL = getClass().getResource(s);
+        if (helpURL == null) {
+            System.err.println("Couldn't open help file: " + s);
+        } else if (DEBUG) {
+            System.out.println("Help URL is " + helpURL);
+        }
+
+        displayURL(helpURL);
+    }
+
+    private void displayURL(URL url) {
+        try {
+            if (url != null) {
+                htmlPane.setPage(url);
+            } else { //null url
+                htmlPane.setText("File Not Found");
+                if (DEBUG) {
+                    System.out.println("Attempted to display a null URL.");
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("Attempted to read a bad URL: " + url);
+        }
+    }
+ 
+    private void displayMatch(FormattedMatch match) {
+        if (match != null) {
+            htmlPane.setText(match.getTextMatch());            
+        } else { //null url
+            htmlPane.setText("File Not Found");
+        }
     }
 
     /**
-     * This method is called from within the constructor to initialize the form.
-     * WARNING: Do NOT modify this code. The content of this method is always
-     * regenerated by the Form Editor.
+     * Create the GUI and show it. For thread safety, this method should be
+     * invoked from the event dispatch thread.
      */
-    @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
-    private void initComponents() {
-
-        buttonGroup1 = new javax.swing.ButtonGroup();
-        buttonGroup2 = new javax.swing.ButtonGroup();
-        buttonGroup3 = new javax.swing.ButtonGroup();
-        jDialog1 = new javax.swing.JDialog();
-        jPanel1 = new javax.swing.JPanel();
-        jToolBar1 = new javax.swing.JToolBar();
-        jTextField3 = new javax.swing.JTextField();
-        jProgressBar1 = new javax.swing.JProgressBar();
-        jPanel2 = new javax.swing.JPanel();
-        jLabel1 = new javax.swing.JLabel();
-        jTextField2 = new javax.swing.JTextField();
-        jScrollPane2 = new javax.swing.JScrollPane();
-        jEditorPane1 = new javax.swing.JEditorPane();
-        jToolBar2 = new javax.swing.JToolBar();
-
-        javax.swing.GroupLayout jDialog1Layout = new javax.swing.GroupLayout(jDialog1.getContentPane());
-        jDialog1.getContentPane().setLayout(jDialog1Layout);
-        jDialog1Layout.setHorizontalGroup(
-            jDialog1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 400, Short.MAX_VALUE)
-        );
-        jDialog1Layout.setVerticalGroup(
-            jDialog1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 300, Short.MAX_VALUE)
-        );
-
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-
-        jToolBar1.setRollover(true);
-
-        jTextField3.setText("jTextField3");
-        jToolBar1.add(jTextField3);
-
-        jLabel1.setText("jLabel1");
-
-        javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
-        jPanel2.setLayout(jPanel2Layout);
-        jPanel2Layout.setHorizontalGroup(
-            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel2Layout.createSequentialGroup()
-                .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 441, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 140, Short.MAX_VALUE))
-        );
-        jPanel2Layout.setVerticalGroup(
-            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel2Layout.createSequentialGroup()
-                .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 27, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(73, Short.MAX_VALUE))
-        );
-
-        jTextField2.setText("jTextField2");
-
-        jScrollPane2.setViewportView(jEditorPane1);
-
-        jToolBar2.setRollover(true);
-
-        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
-        jPanel1.setLayout(jPanel1Layout);
-        jPanel1Layout.setHorizontalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jToolBar1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addGroup(jPanel1Layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jProgressBar1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-            .addGroup(jPanel1Layout.createSequentialGroup()
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGap(38, 38, 38)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(jPanel1Layout.createSequentialGroup()
-                                .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, 442, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(18, 18, 18)
-                                .addComponent(jToolBar2, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGap(199, 199, 199)
-                        .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addGap(0, 278, Short.MAX_VALUE))
-        );
-        jPanel1Layout.setVerticalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel1Layout.createSequentialGroup()
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGap(44, 44, 44)
-                        .addComponent(jTextField2, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addComponent(jToolBar2, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(26, 26, 26)))
-                .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(28, 28, 28)
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
-                .addComponent(jToolBar1, javax.swing.GroupLayout.PREFERRED_SIZE, 34, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jProgressBar1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(198, Short.MAX_VALUE))
-        );
-
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
-        getContentPane().setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addContainerGap())
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addContainerGap())
-        );
-
-        pack();
-    }// </editor-fold>//GEN-END:initComponents
-
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
+    private static void createAndShowGUI() {
+        if (useSystemLookAndFeel) {
+            try {
+                UIManager.setLookAndFeel(
+                        UIManager.getCrossPlatformLookAndFeelClassName());
+            } catch (Exception e) {
+                System.err.println("Couldn't use system look and feel.");
             }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(SearchEngineFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(SearchEngineFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(SearchEngineFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(SearchEngineFrame.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
-        //</editor-fold>
 
-        /* Create and display the form */
-        java.awt.EventQueue.invokeLater(new Runnable() {
+        //Create and set up the window.
+        JFrame frame = new JFrame("Поиск документов ERIB");
+//        setCenterPosition(frame);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        //Add content to the window.
+        frame.add(new SearchEngineFrame());
+        //Display the window.
+        frame.pack();
+        frame.setVisible(true);
+    }
+
+    private static void setCenterPosition(JFrame frame) {
+        
+          Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+          Dimension frameSize = frame.getPreferredSize();
+
+          if (frameSize.height > screenSize.height) {
+               frameSize.height = screenSize.height;
+          }
+
+          if (frameSize.width > screenSize.width) {
+               frameSize.width = screenSize.width;
+          }
+          int newWidth = (int) (screenSize.getWidth() - frameSize.getWidth())/2;
+          int newHeight = (int) (screenSize.getHeight()- frameSize.getHeight())/2;
+
+          frame.setLocation(newWidth, newHeight);
+     }
+    
+    public static void main(String[] args) {
+        //Schedule a job for the event dispatch thread:
+        //creating and showing this application's GUI.
+        javax.swing.SwingUtilities.invokeLater(new Runnable() {
+            @Override
             public void run() {
-                new SearchEngineFrame().setVisible(true);
+                createAndShowGUI();
             }
         });
     }
-
-    // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.ButtonGroup buttonGroup1;
-    private javax.swing.ButtonGroup buttonGroup2;
-    private javax.swing.ButtonGroup buttonGroup3;
-    private javax.swing.JDialog jDialog1;
-    private javax.swing.JEditorPane jEditorPane1;
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JPanel jPanel1;
-    private javax.swing.JPanel jPanel2;
-    private javax.swing.JProgressBar jProgressBar1;
-    private javax.swing.JScrollPane jScrollPane2;
-    private javax.swing.JTextField jTextField2;
-    private javax.swing.JTextField jTextField3;
-    private javax.swing.JToolBar jToolBar1;
-    private javax.swing.JToolBar jToolBar2;
-    // End of variables declaration//GEN-END:variables
-
-    private com.rojsn.searchengine.gui.SearchEngineDemo demoPanel;
-
 }

@@ -1,6 +1,5 @@
 package com.rojsn.searchengine;
 
-import com.rojsn.searchengine.gui.SearchEngineDemo;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
