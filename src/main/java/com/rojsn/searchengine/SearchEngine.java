@@ -33,7 +33,7 @@ import org.xml.sax.SAXException;
 public class SearchEngine {
 
     private static final org.apache.log4j.Logger LOG = org.apache.log4j.Logger.getLogger(SearchEngine.class);
-    private final String BASE_DOC_FOLDER = "base_folder";
+    public static final String BASE_DOC_FOLDER = "base_folder";
     public static String BASE_FOLDER;
     private int WIDTH_OF_SEARCH;
     private final String WIDTH = "width";

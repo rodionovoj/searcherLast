@@ -2,6 +2,8 @@ package com.rojsn.searchengine.gui;
 
 import com.rojsn.searchengine.FormattedMatch;
 import com.rojsn.searchengine.SearchEngine;
+import com.rojsn.searchengine.XMLUtils;
+import java.awt.BorderLayout;
 import javax.swing.JEditorPane;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -28,9 +30,11 @@ import static javax.swing.GroupLayout.Alignment.BASELINE;
 import static javax.swing.GroupLayout.Alignment.LEADING;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.JProgressBar;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.tree.TreePath;
@@ -62,19 +66,18 @@ public class SearchEngineDemo extends JPanel implements TreeSelectionListener {
     //Optionally set the look and feel.
     private static final boolean useSystemLookAndFeel = false;
     
-    private String regexp = "";
+//    private String regexp = "";
 
     public SearchEngineDemo() {
         initComponents();        
         new SearchData();     
     }
-
+    
     private void initComponents() {
                
         mainSplitPanel = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
-        Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
-        mainSplitPanel.setPreferredSize(dim);
-        
+        Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();        
+        mainSplitPanel.setPreferredSize(dim);        
         cbCaseSensitive.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0)); 
         cbCaseSensitive.addActionListener(new NotImplementedYet());
         cbBackward.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0)); 
@@ -145,7 +148,6 @@ public class SearchEngineDemo extends JPanel implements TreeSelectionListener {
         layout.setVerticalGroup(layout.createSequentialGroup() 
                  .addGroup(layout.createSequentialGroup()
                     .addGroup(layout.createParallelGroup(BASELINE).addComponent(button).addComponent(baseFolder))
-//                    .addGroup(layout.createParallelGroup(BASELINE).addComponent(baseFolder))
             )
             .addGroup(
                 layout.createParallelGroup(BASELINE) 
@@ -189,6 +191,7 @@ public class SearchEngineDemo extends JPanel implements TreeSelectionListener {
    
     private TreeSelectionListener createSelectionListener() {
         return new TreeSelectionListener() {
+            @Override
             public void valueChanged(TreeSelectionEvent e) {
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode) tree.getLastSelectedPathComponent();
                 if (node == null) {
@@ -206,13 +209,13 @@ public class SearchEngineDemo extends JPanel implements TreeSelectionListener {
     private class FolderChooser implements ActionListener {
         @Override
         public void actionPerformed(ActionEvent e) {         
-            JFileChooser fileopen = new JFileChooser();
+            JFileChooser fileopen = new JFileChooser(SearchEngine.BASE_FOLDER);
             fileopen.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             int ret = fileopen.showDialog(null, "Выбрать каталог");
             if (ret == JFileChooser.APPROVE_OPTION) {
                 File file = fileopen.getSelectedFile();
                 baseFolder.setText(file.getAbsolutePath());
-           //     XMLUtils.storeXmlPropertiesToFile(sourceProperties, pathAndFileName);
+                XMLUtils.saveProperty(SearchEngine.BASE_DOC_FOLDER, file.getAbsolutePath());
             }
         }
 }
@@ -227,6 +230,10 @@ public class SearchEngineDemo extends JPanel implements TreeSelectionListener {
                     JOptionPane.showMessageDialog(null, "Error: Строка поиска не должна быть пустой!", "Error Massage",
                             JOptionPane.ERROR_MESSAGE);
                 } else {
+//                    showProgressBar();
+//                    JProgressBar progressBar1 = new JProgressBar();
+//                    progressBar1.setIndeterminate(true);
+//                    getPhtmlPane.add(progressBar1);
                     if (baseFile.isDirectory()) {
                         se.fillOperatedFileNames(baseFile, textField.getText());
                     }
@@ -241,6 +248,7 @@ public class SearchEngineDemo extends JPanel implements TreeSelectionListener {
                     
                     tree.setRootVisible(true);
                     treeView.getViewport().add(tree);
+//                    htmlPane.remove(progressBar1);
 //                    System.out.println("top.getDepth() = " + top.getDepth());
 //                    DefaultTreeModel model = (DefaultTreeModel)tree.getModel();                
 //                    model.reload();
@@ -324,16 +332,11 @@ public class SearchEngineDemo extends JPanel implements TreeSelectionListener {
         }
 
         //Create and set up the window.
-        JFrame frame = new JFrame("TreeDemo");
-//        Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
-//        frame.setSize(new Dimension(1860, 1000));
-//        frame.setSize(dim);
-
-        setCenterPosition(frame);
+        JFrame frame = new JFrame("Поиск документов");
+//        setCenterPosition(frame);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         //Add content to the window.
         frame.add(new SearchEngineDemo());
-
         //Display the window.
         frame.pack();
         frame.setVisible(true);
