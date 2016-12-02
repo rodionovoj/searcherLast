@@ -10,5 +10,5 @@ package com.rojsn.searchengine.gui;
  * @author sbt-rodionov-oy
  */
 public class FolderChooser {
-    
+
 }
