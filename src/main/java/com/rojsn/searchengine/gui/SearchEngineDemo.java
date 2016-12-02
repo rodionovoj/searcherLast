@@ -85,13 +85,10 @@ public class SearchEngineDemo extends JPanel implements TreeSelectionListener {
         //Create the nodes.
         DefaultMutableTreeNode top = new DefaultMutableTreeNode(SearchEngine.BASE_FOLDER);
         tree = new JTree(top); 
-                //Create a tree that allows one selection at a time.        
         tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         //Listen for when the selection changes.
         tree.addTreeSelectionListener(this);
-//        tree.addTreeSelectionListener(createSelectionListener());
         tree.setRootVisible(true);
-//        tree.addNotify();
         
         SearchEngine se = new SearchEngine();        
         //Create the scroll pane and add the tree to it. 
@@ -193,16 +190,15 @@ public class SearchEngineDemo extends JPanel implements TreeSelectionListener {
     private TreeSelectionListener createSelectionListener() {
         return new TreeSelectionListener() {
             public void valueChanged(TreeSelectionEvent e) {
-                TreePath path = e.getPath();                
-                int pathCount = path.getPathCount();
-
-                for (int i = 0; i < pathCount; i++) {
-                    System.out.print(path.getPathComponent(i).toString());
-                    if (i + 1 != pathCount) {
-                        System.out.print("|");
-                    }
+                DefaultMutableTreeNode node = (DefaultMutableTreeNode) tree.getLastSelectedPathComponent();
+                if (node == null) {
+                    return;
                 }
-                System.out.println("");
+                Object nodeInfo = node.getUserObject();
+                if (node.isLeaf()) {
+                    FormattedMatch match = (FormattedMatch) nodeInfo;
+                    displayMatch(match);
+                }
             }
         };
     }
@@ -239,6 +235,11 @@ public class SearchEngineDemo extends JPanel implements TreeSelectionListener {
                     System.out.println("top.getDepth() = " + top.getDepth());
                     
                     tree = new JTree(top); 
+                    tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+                    //Listen for when the selection changes.
+                    tree.addTreeSelectionListener(createSelectionListener());
+                    
+                    tree.setRootVisible(true);
                     treeView.getViewport().add(tree);
 //                    System.out.println("top.getDepth() = " + top.getDepth());
 //                    DefaultTreeModel model = (DefaultTreeModel)tree.getModel();                
@@ -260,6 +261,7 @@ public class SearchEngineDemo extends JPanel implements TreeSelectionListener {
     
     }
     
+    @Override
     public void valueChanged(TreeSelectionEvent e) {
         DefaultMutableTreeNode node = (DefaultMutableTreeNode) tree.getLastSelectedPathComponent();
         if (node == null) {
@@ -301,7 +303,7 @@ public class SearchEngineDemo extends JPanel implements TreeSelectionListener {
  
     private void displayMatch(FormattedMatch match) {
         if (match != null) {
-            htmlPane.setText(match.getTextMatch());
+            htmlPane.setText(match.getTextMatch());            
         } else { //null url
             htmlPane.setText("File Not Found");
         }
