@@ -1,4 +1,4 @@
-package com.rojsn.searchengine.gui;
+package com.rojsn.searchengine;
 
 import com.rojsn.searchengine.FormattedMatch;
 import com.rojsn.searchengine.SearchEngine;
@@ -30,6 +30,7 @@ import static javax.swing.GroupLayout.Alignment.BASELINE;
 import static javax.swing.GroupLayout.Alignment.LEADING;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -70,6 +71,7 @@ public class SearchEngineFrame extends JPanel implements TreeSelectionListener {
 
     private void initComponents() {
 
+//        UIManager.addPropertyChangeListener(new UISwitchListener((JComponent) getRootPane()));
         mainSplitPanel = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
         Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
         mainSplitPanel.setPreferredSize(dim);
