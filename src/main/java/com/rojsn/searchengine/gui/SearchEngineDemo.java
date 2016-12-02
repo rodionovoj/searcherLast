@@ -35,6 +35,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JProgressBar;
+import javax.swing.JScrollBar;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.tree.TreePath;
@@ -66,8 +67,6 @@ public class SearchEngineDemo extends JPanel implements TreeSelectionListener {
     //Optionally set the look and feel.
     private static final boolean useSystemLookAndFeel = false;
     
-//    private String regexp = "";
-
     public SearchEngineDemo() {
         initComponents();        
         new SearchData();     
@@ -95,11 +94,7 @@ public class SearchEngineDemo extends JPanel implements TreeSelectionListener {
         
         SearchEngine se = new SearchEngine();        
         //Create the scroll pane and add the tree to it. 
-        treeView = new JScrollPane(
-            tree, 
-            JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
-            JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS
-        );        
+        treeView = new JScrollPane(tree);        
         treeView.setWheelScrollingEnabled(true);
         treeView.setViewportView(tree);
         
@@ -230,33 +225,16 @@ public class SearchEngineDemo extends JPanel implements TreeSelectionListener {
                     JOptionPane.showMessageDialog(null, "Error: Строка поиска не должна быть пустой!", "Error Massage",
                             JOptionPane.ERROR_MESSAGE);
                 } else {
-//                    showProgressBar();
-//                    JProgressBar progressBar1 = new JProgressBar();
-//                    progressBar1.setIndeterminate(true);
-//                    getPhtmlPane.add(progressBar1);
                     if (baseFile.isDirectory()) {
                         se.fillOperatedFileNames(baseFile, textField.getText());
                     }
-                    System.out.println("top.getDepth() = " + top.getDepth());
                     se.createNodes(top);  
-                    System.out.println("top.getDepth() = " + top.getDepth());
-                    
                     tree = new JTree(top); 
                     tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
                     //Listen for when the selection changes.
                     tree.addTreeSelectionListener(createSelectionListener());
-                    
                     tree.setRootVisible(true);
                     treeView.getViewport().add(tree);
-//                    htmlPane.remove(progressBar1);
-//                    System.out.println("top.getDepth() = " + top.getDepth());
-//                    DefaultTreeModel model = (DefaultTreeModel)tree.getModel();                
-//                    model.reload();
-//                    tree.setModel(model);
-//                    tree.repaint();
-//                    tree.invalidate();
-//                    tree.updateUI();
-//                    System.out.println("top.getDepth() = " + top.getDepth());
                 }      
         }    
     }

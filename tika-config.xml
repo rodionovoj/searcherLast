@@ -2,8 +2,8 @@
 <!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
 <properties>
 <comment>Parameters for application</comment>
+<entry key="base_folder">D:\docc</entry>
 <entry key="masks">odt, doc, docx, ods, xls, xlsx, ppt, pptx, pdf</entry>
-<entry key="base_folder">D:\docs\По релизам</entry>
 <entry key="width">200</entry>
 <entry key="max_size">10000000</entry>
 </properties>
