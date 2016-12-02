@@ -35,13 +35,19 @@ public class SearchEngine {
     public static final String BASE_DOC_FOLDER = "base_folder";
     public static String BASE_FOLDER;
     private int WIDTH_OF_SEARCH;
+    private int LEFT_OFFSET_SEARCH;
+    private int RIGHT_OFFSET_SEARCH;
     private final String WIDTH = "width";
+    private final String LEFT_OFFSET = "left_offset";
+    private final String RIGHT_OFFSET = "right_offset";
     private int MAX_SIZE_OF_TEXT;
     private final String MAX_SIZE = "max_size";
     private final String MASKS_ALIAS = "masks";
     private static String MASKS = "";
     private static String encoding = "windows-1251";
     private Map<String, List<FormattedMatch>> mapOfFiles = new HashMap<>();
+    public static boolean CASE_SENSITIVE_VALUE = true;
+    private String CASE_SENSITIVE = "case_sensitive";
 
     public SearchEngine() {
         init();
@@ -59,8 +65,11 @@ public class SearchEngine {
             BASE_FOLDER = (String) pref.getProperty(BASE_DOC_FOLDER);
             MASKS = (String) pref.getProperty(MASKS_ALIAS);
             WIDTH_OF_SEARCH = Integer.parseInt((String) pref.getProperty(WIDTH, "200"));
+            LEFT_OFFSET_SEARCH = Integer.parseInt((String) pref.getProperty(LEFT_OFFSET, "200"));
+            RIGHT_OFFSET_SEARCH = Integer.parseInt((String) pref.getProperty(RIGHT_OFFSET, "200"));
             MAX_SIZE_OF_TEXT = Integer.parseInt((String) pref.getProperty(MAX_SIZE, "10000000"));
-            encoding = System.lineSeparator().equals("\r\n") ? "windows-1251" : "UTF-8";               
+            encoding = System.lineSeparator().equals("\r\n") ? "windows-1251" : "UTF-8";  
+            CASE_SENSITIVE_VALUE = Boolean.parseBoolean((String) pref.getProperty(CASE_SENSITIVE, "true"));
 
         } catch (IOException | NumberFormatException e) {
             LOG.error("count=" + e.getMessage());
@@ -73,8 +82,24 @@ public class SearchEngine {
         File baseFile = new File(BASE_FOLDER);
         if (baseFile.isDirectory()) {
             we.fillOperatedFileNames(baseFile, "чебурек");
-            we.writeXML();
         }       
+    }
+
+    public void fillOperatedFileNames(File baseFile, String regexp, boolean isCaseSensitive) {
+        CASE_SENSITIVE_VALUE = isCaseSensitive;
+        List<File> list = Arrays.asList(baseFile.listFiles());
+        String[] extensions = MASKS.split(", ");        
+        for (File file: list) {
+            if (file.isFile()) {
+                for (String extension: extensions) {
+                    if (file.getName().contains(extension)) {
+                        extractContentDocx(new ArrayList<>(), file.getAbsolutePath(), regexp);
+                    }
+                }
+            } else {
+                fillOperatedFileNames(file.getAbsoluteFile(), regexp, isCaseSensitive);
+            }
+        }
     }
 
     public void fillOperatedFileNames(File baseFile, String regexp) {
@@ -103,13 +128,13 @@ public class SearchEngine {
 
     private void search(List<FormattedMatch> matches, String regexp, String fileName) throws UnsupportedEncodingException, IOException, SAXException, TikaException {        
         String text = parseToPlainText(fileName);
-        Pattern pattern = Pattern.compile(regexp);
-        Matcher matcher = pattern.matcher(text);           
+        Pattern pattern = Pattern.compile(CASE_SENSITIVE_VALUE ? regexp : regexp.toUpperCase());
+        Matcher matcher = pattern.matcher(CASE_SENSITIVE_VALUE ? text: text.toUpperCase());           
         int index = 1;
         while (matcher.find()) {
             FormattedMatch fm = new FormattedMatch();
-            fm.setStart((matcher.start() < WIDTH_OF_SEARCH ? 0 : (matcher.start() - WIDTH_OF_SEARCH)));
-            fm.setEnd((matcher.end() < WIDTH_OF_SEARCH) ? matcher.end() + WIDTH_OF_SEARCH : matcher.end());
+            fm.setStart((matcher.start() < LEFT_OFFSET_SEARCH ? 0 : (matcher.start() - LEFT_OFFSET_SEARCH)));
+            fm.setEnd((matcher.end() < RIGHT_OFFSET_SEARCH) ? matcher.end() + RIGHT_OFFSET_SEARCH : matcher.end());
             String dd = "";
             if (fm.getEnd() > text.length()) {
                 dd = text.substring(fm.getStart());
@@ -124,7 +149,7 @@ public class SearchEngine {
         }
     }
     
-    public void  createNodes(DefaultMutableTreeNode top) {
+    public void createNodes(DefaultMutableTreeNode top) {
               
         DefaultMutableTreeNode document = null;
         DefaultMutableTreeNode matchNode = null;             
@@ -143,23 +168,6 @@ public class SearchEngine {
         }         
     }
 
-    public void showContent() {
-        Set keySet = mapOfFiles.keySet();
-        Iterator it = keySet.iterator();
-        while (it.hasNext()) {
-            String key = (String) it.next();
-            List<FormattedMatch> listOfMatches = (List<FormattedMatch>) mapOfFiles.get(key);
-            listOfMatches.stream().forEach((fm) -> {
-                System.out.println("\n" + key + ":" + fm.toString());
-            });
-        }
-    }
-
-    public String identifyLanguage(String text) {
-        LanguageIdentifier identifier = new LanguageIdentifier(text);
-        return identifier.getLanguage();
-    }
-
     public String parseToPlainText(String fileName) throws IOException, SAXException, TikaException {
 //    TikaConfig config = new TikaConfig("tika-config.xml");
         TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
@@ -172,49 +180,6 @@ public class SearchEngine {
             parser.parse(stream, handler, metadata);
 //            autoDetectParser.parse(stream, handler, metadata);
             return handler.toString();
-        }
-    }
-
-//    public String parseToStringExample() throws IOException, SAXException, TikaException {
-//        Tika tika = new Tika();
-//        tika.setMaxStringLength(MAX_SIZE_OF_TEXT);
-//        try (InputStream stream = new FileInputStream("d:/d.doc")) {
-//            return tika.parseToString(stream);
-//        }
-//    }
-    private void writeXML() {
-        
-        Set keySet = mapOfFiles.keySet();
-        Iterator it = keySet.iterator();        
-        XMLOutputFactory factory = XMLOutputFactory.newInstance();
-        try {
-            XMLStreamWriter writer = factory.createXMLStreamWriter(System.out, encoding);
-            writer.writeStartDocument(encoding, "1.0");
-            writer.writeStartElement("documents");                        
-            while (it.hasNext()) {
-                String fileName = (String) it.next();
-                writer.writeStartElement("document");
-                writer.writeStartElement("filename");
-                writer.writeCData(fileName);   
-                writer.writeEndElement();//filename
-                List<FormattedMatch> listOfMatches = (List<FormattedMatch>) mapOfFiles.get(fileName);  
-                for (FormattedMatch fm : listOfMatches) {
-                    writer.writeStartElement("item");
-                    writer.writeAttribute("index", String.valueOf(fm.getIndex()));                   
-                    writer.writeAttribute("start_position", String.valueOf(fm.getStart()));                   
-                    writer.writeAttribute("end_position", String.valueOf(fm.getEnd()));                   
-                    writer.writeStartElement("description");
-                    writer.writeCData(fm.getTextMatch().trim());
-                    writer.writeEndElement();//description
-                    writer.writeEndElement();//item
-                }                
-                writer.writeEndElement();//document
-            }
-            writer.writeEndDocument();//documents
-            writer.flush();
-            writer.close();
-        } catch (XMLStreamException e) {
-            LOG.error(e.getMessage());       
         }
     }
 }

@@ -1,9 +1,5 @@
 package com.rojsn.searchengine;
 
-import com.rojsn.searchengine.FormattedMatch;
-import com.rojsn.searchengine.SearchEngine;
-import com.rojsn.searchengine.XMLUtils;
-import java.awt.BorderLayout;
 import javax.swing.JEditorPane;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -30,7 +26,6 @@ import static javax.swing.GroupLayout.Alignment.BASELINE;
 import static javax.swing.GroupLayout.Alignment.LEADING;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -70,13 +65,14 @@ public class SearchEngineFrame extends JPanel implements TreeSelectionListener {
     }
 
     private void initComponents() {
-
+SearchEngine se = new SearchEngine();
 //        UIManager.addPropertyChangeListener(new UISwitchListener((JComponent) getRootPane()));
         mainSplitPanel = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
         Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
         mainSplitPanel.setPreferredSize(dim);
         cbCaseSensitive.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
-        cbCaseSensitive.addActionListener(new NotImplementedYet());
+        cbCaseSensitive.setSelected(SearchEngine.CASE_SENSITIVE_VALUE);
+        cbCaseSensitive.addActionListener(new CaseSensitive());
         cbBackward.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
         cbBackward.addActionListener(new NotImplementedYet());
         cbWholeWords.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
@@ -90,7 +86,7 @@ public class SearchEngineFrame extends JPanel implements TreeSelectionListener {
         tree.addTreeSelectionListener(this);
         tree.setRootVisible(true);
 
-        SearchEngine se = new SearchEngine();
+        
         //Create the scroll pane and add the tree to it. 
         treeView = new JScrollPane(tree);
         treeView.setWheelScrollingEnabled(true);
@@ -227,7 +223,7 @@ public class SearchEngineFrame extends JPanel implements TreeSelectionListener {
                         JOptionPane.ERROR_MESSAGE);
             } else {
                 if (baseFile.isDirectory()) {
-                    se.fillOperatedFileNames(baseFile, textField.getText());
+                    se.fillOperatedFileNames(baseFile, textField.getText(), cbCaseSensitive.isSelected());
                 }
                 se.createNodes(top);
                 tree = new JTree(top);
@@ -240,6 +236,14 @@ public class SearchEngineFrame extends JPanel implements TreeSelectionListener {
         }
     }
 
+    private class CaseSensitive implements ActionListener {
+
+        @Override
+        public void actionPerformed(ActionEvent e) {            
+            XMLUtils.saveProperty("case_sensitive", "" + cbCaseSensitive.isSelected());
+        }
+    }
+    
     private class NotImplementedYet implements ActionListener {
 
         @Override

@@ -2,8 +2,11 @@
 <!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
 <properties>
 <comment>Parameters for application</comment>
-<entry key="masks">odt, doc, docx, ods, xls, xlsx, ppt, pptx, pdf</entry>
+<entry key="left_offset">200</entry>
 <entry key="base_folder">D:\docs\По релизам\Релиз 05</entry>
+<entry key="masks">odt, doc, docx, ods, xls, xlsx, ppt, pptx, pdf</entry>
 <entry key="width">200</entry>
 <entry key="max_size">10000000</entry>
+<entry key="case_sensitive">false</entry>
+<entry key="right_offset">200</entry>
 </properties>
