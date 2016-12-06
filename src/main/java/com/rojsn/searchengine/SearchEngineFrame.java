@@ -65,13 +65,13 @@ public class SearchEngineFrame extends JPanel implements TreeSelectionListener {
     }
 
     private void initComponents() {
-SearchEngine se = new SearchEngine();
+        SearchEngine se = new SearchEngine();
 //        UIManager.addPropertyChangeListener(new UISwitchListener((JComponent) getRootPane()));
         mainSplitPanel = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
         Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
         mainSplitPanel.setPreferredSize(dim);
         cbCaseSensitive.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
-        cbCaseSensitive.setSelected(SearchEngine.CASE_SENSITIVE_VALUE);
+        cbCaseSensitive.setSelected(SearchEngine.isCaseSensitiveValue());
         cbCaseSensitive.addActionListener(new CaseSensitive());
         cbBackward.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
         cbBackward.addActionListener(new NotImplementedYet());
@@ -216,6 +216,7 @@ SearchEngine se = new SearchEngine();
         @Override
         public void actionPerformed(ActionEvent e) {
             SearchEngine se = new SearchEngine();
+            EngineTimer.start();
             DefaultMutableTreeNode top = new DefaultMutableTreeNode(baseFolder.getText());
             File baseFile = new File(baseFolder.getText());
             if (textField.getText().equals("")) {
@@ -223,7 +224,9 @@ SearchEngine se = new SearchEngine();
                         JOptionPane.ERROR_MESSAGE);
             } else {
                 if (baseFile.isDirectory()) {
-                    se.fillOperatedFileNames(baseFile, textField.getText(), cbCaseSensitive.isSelected());
+                    se.fillOperatedFileNames(baseFile, textField.getText());
+                    SearchEngine.setCaseSensitiveValue(cbCaseSensitive.isSelected());
+//                    se.fillOperatedFileNames(baseFile, textField.getText(), cbCaseSensitive.isSelected());
                 }
                 se.createNodes(top);
                 tree = new JTree(top);
@@ -233,6 +236,7 @@ SearchEngine se = new SearchEngine();
                 tree.setRootVisible(true);
                 treeView.getViewport().add(tree);
             }
+            EngineTimer.end();
         }
     }
 

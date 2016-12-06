@@ -8,15 +8,17 @@ import java.io.OutputStream;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.logging.log4j.LogManager;
 
 /**
  *
  * @author oleg
  */
 public class XMLUtils {
-
-    private static final org.apache.log4j.Logger LOG = org.apache.log4j.Logger.getLogger(XMLUtils.class);
-
+    
+    private static final org.apache.logging.log4j.Logger LOG = LogManager.getLogger(XMLUtils.class);
+    private static final String configFile = "config.xml";
+    
     public static void storeXmlProperties(
             final Properties sourceProperties,
             final OutputStream out) {
@@ -39,42 +41,24 @@ public class XMLUtils {
         }
     }
     
-    public static void saveProperty(String key, String value) {
-        
-        Properties props = new Properties();
-        String fileName = "tika-config.xml";
+    public static void saveProperty(String key, String value) {        
+        Properties props = new Properties();        
             try {
-                props.loadFromXML(new FileInputStream(fileName));
+                props.loadFromXML(new FileInputStream(configFile));
                 props.setProperty(key, value);
-                storeXmlPropertiesToFile(props, fileName);        
+                storeXmlPropertiesToFile(props, configFile);        
             } catch (FileNotFoundException ex) {
                 Logger.getLogger(XMLUtils.class.getName()).log(Level.SEVERE, null, ex);
             } catch (IOException ex) {
             Logger.getLogger(XMLUtils.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        
-    } 
-    
+        }        
+    }     
     
     public static void main(String[] arg) throws Exception{
         
         Properties props = new Properties();
-        props.loadFromXML(new FileInputStream("tika-config.xml"));
+        props.loadFromXML(new FileInputStream(configFile));
         props.setProperty("base_folder", "dfs");
-        storeXmlPropertiesToFile(props, "tika-config.xml");
-        
-    
-//        String xmlString = setupXMLBuffer(
-//              new StringBuffer("<firstName>")
-//                .append(customer.firstName)
-//       .append("</firstName>")
-//       .append("<lastName>")
-//       .append(customer.lastName)
-//       .append("</lastName>")
-//  // etc...
-//       .toString()
-//        );
-//bufferedWriter.write(xmlString);
-// other file I/O code
+        storeXmlPropertiesToFile(props, configFile);
     }
 }
