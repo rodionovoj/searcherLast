@@ -347,6 +347,24 @@ public class SearchEngineFrame extends JPanel implements TreeSelectionListener {
 
         frame.setLocation(newWidth, newHeight);
     }
+    
+    private static void setPanelCenterPosition(JSplitPane frame) {
+
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        Dimension frameSize = frame.getPreferredSize();
+
+        if (frameSize.height > screenSize.height) {
+            frameSize.height = screenSize.height;
+        }
+
+        if (frameSize.width > screenSize.width) {
+            frameSize.width = screenSize.width;
+        }
+        int newWidth = (int) (screenSize.getWidth() - frameSize.getWidth()) / 2;
+        int newHeight = (int) (screenSize.getHeight() - frameSize.getHeight()) / 2;
+
+        frame.setLocation(newWidth, newHeight);
+    }
 
     public static void main(String[] args) {
         //Schedule a job for the event dispatch thread:

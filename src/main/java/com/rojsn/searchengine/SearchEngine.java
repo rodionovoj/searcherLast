@@ -112,7 +112,7 @@ public class SearchEngine {
         while (matcher.find()) {
             FormattedMatch fm = new FormattedMatch();
             fm.setStart((matcher.start() < LEFT_OFFSET_SEARCH ? 0 : (matcher.start() - LEFT_OFFSET_SEARCH)));
-            fm.setEnd((matcher.end() < RIGHT_OFFSET_SEARCH) ? matcher.end() + RIGHT_OFFSET_SEARCH : matcher.end());
+            fm.setEnd((matcher.end() < RIGHT_OFFSET_SEARCH) ? matcher.end() : RIGHT_OFFSET_SEARCH + matcher.end());
             String dd = "";
             if (fm.getEnd() > text.length()) {
                 dd = text.substring(fm.getStart());
